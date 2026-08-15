@@ -1,0 +1,180 @@
+{
+  "name": "Worker2(CAREER_ADVICE)",
+  "nodes": [
+    {
+      "parameters": {
+        "inputSource": "passthrough"
+      },
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        0
+      ],
+      "id": "a5031066-1ec6-4566-a5e7-bfad0a68bfe7",
+      "name": "When Executed by Another Workflow"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json['prompt '] }}",
+        "options": {
+          "systemMessage": "ROL\n\nEres un orientador profesional especializado en desarrollo de carrera y empleabilidad.\n\nÁMBITO\n\nTu función es analizar la información contenida en el CV del candidato y utilizarla para brindar recomendaciones relacionadas con su desarrollo profesional.\n\nPuedes identificar:\n- Puestos y perfiles laborales para los que el candidato podría ser adecuado.\n- Fortalezas y habilidades relevantes.\n- Habilidades o conocimientos que sería conveniente desarrollar.\n- Tecnologías o herramientas que podrían mejorar su perfil profesional.\n- Posibles caminos de crecimiento profesional.\n- Recomendaciones para mejorar la presentación y competitividad del CV.\n\nREGLAS\n\n1. Basa tus recomendaciones principalmente en la información disponible en el CV.\n2. No inventes experiencia, conocimientos, certificaciones ni habilidades que no aparezcan en el CV.\n3. Puedes realizar inferencias razonables a partir de la experiencia y conocimientos indicados, pero debes diferenciarlas de los datos explícitos.\n4. Si la consulta requiere información que no está disponible en el CV, indícalo claramente.\n5. No respondas como si fueras un reclutador que está contratando al candidato. Tu función es asesorarlo.\n6. Sé concreto, profesional y útil.\n7. Responde directamente a la consulta del usuario y evita información que no sea relevante.\n\nUSO DE LA INFORMACIÓN DEL CV\n\nCuando la consulta requiera analizar el perfil profesional del candidato,\ndebes consultar la información disponible en Google Docs antes de responder.\n\nNo solicites al usuario que copie o pegue nuevamente su CV si la información\nya está disponible mediante la herramienta.\n\nUtiliza la información obtenida del CV como base para tus recomendaciones.\nNo inventes experiencia, conocimientos, certificaciones o habilidades que\nno estén presentes en el CV.\nLa respuesta debe ser concisa y adecuada para enviarse en un único mensaje de Telegram. No superar aproximadamente 1500 caracteres. Prioriza las recomendaciones más importantes y evita explicaciones extensas."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        224,
+        0
+      ],
+      "id": "6f3f5f94-c4a2-4820-9981-8f6245a77d38",
+      "name": "AI Agent",
+      "retryOnFail": true,
+      "maxTries": 5,
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "model": "openai/gpt-oss-20b",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGroq",
+      "typeVersion": 1,
+      "position": [
+        208,
+        208
+      ],
+      "id": "13ceaeaf-1bfc-4eab-b689-3d55400445b9",
+      "name": "Groq Chat Model",
+      "credentials": {
+        "groqApi": {
+          "id": "TQcKCGgde2yne7b4",
+          "name": "Groq account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "documentURL": "https://docs.google.com/document/d/1QgdSaeWAfUWBIliSxyeGHvYwJSJvmjsF24IopHfL__U/edit?usp=sharing"
+      },
+      "type": "n8n-nodes-base.googleDocsTool",
+      "typeVersion": 2,
+      "position": [
+        384,
+        208
+      ],
+      "id": "0fa1db26-ef3b-4e9e-b4a2-d999225278d2",
+      "name": "Get a document in Google Docs",
+      "credentials": {
+        "googleDocsOAuth2Api": {
+          "id": "H5mRwYkZ1AjhafOI",
+          "name": "Google Docs account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "aa0e6138-d92f-41d4-b549-3694b93fb56c",
+              "name": "status",
+              "value": "={{ $json.error ? 'error' : 'success' }}",
+              "type": "string"
+            },
+            {
+              "id": "5513c4a6-5584-4e24-99bf-728abb8a2221",
+              "name": "data",
+              "value": "={{ $json.output || $json.error }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        560,
+        0
+      ],
+      "id": "d18772e2-f8ef-4296-8c14-d740d7d176de",
+      "name": "Edit Fields"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When Executed by Another Workflow": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Groq Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get a document in Google Docs": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        []
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "64569308-0e1c-49a7-875e-46823828bdc9",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "56c90e99b438e7f2192da6de7ac4e1482364919445a380c3f30b26009a8443ff"
+  },
+  "nodeGroups": [],
+  "id": "rlMHlPYqCohtSfLo",
+  "tags": []
+}
